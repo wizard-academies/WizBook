@@ -1,0 +1,39 @@
+ADVERSARIAL REVIEW - round 2. Produce the REPORT. Do not spend your budget exploring.
+
+You are reviewing a FIX commit in Papermorph, a Claude Code Skill that turns a PDF into a narrated, animated web book (lessons, picture books, documentaries, shorts, a scroll story, an explore map). An earlier commit added Arabic / right-to-left support; a first review round found defects; this commit is the fix. The most likely place for the next defect is a fix: in past rounds three of five serious defects were created by the fix for the one before.
+
+READ THESE FILES in the workspace. Do NOT run git or any shell command - you cannot approve commands and you will die with nothing:
+  review/round2/fix.diff     the fix under review (site/ engine copies are byte-identical syncs of engine/ and are left out)
+  review/round2/whole.diff   the whole Arabic change including the fix, for context
+You may open the files the diff touches.
+
+This code has already passed several reviews, and others have since found defects in it each time. Treat it as guilty. A review that agrees with the author is a failed review.
+
+WHAT THE FIX CLAIMS:
+  1. engine/engine.js: isRTL(str) is true when the first letter is right-to-left script, OR - only in a book whose <html dir="rtl"> - when any letter is. rtlText(str) puts U+200F in front of a string that isRTL but opens with a Latin letter. T() sets textContent = rtlText(str); stream() types rtlText(str). Claim: in a left-to-right book NOTHING changes, byte for byte.
+  2. documentary film.js say(): a right-to-left line is ONE <text> with a <tspan> per word, each revealed by fill-opacity through prog(); the left-to-right path is as before.
+  3. scripts/engine.py DEFAULT and four style.json name engine-v2.13 (the tag does not exist yet; the maintainer cuts it on merge). export.py's END_CARD checks typeof isRTL before calling it.
+  4. scripts/tts.py cut_short(clean, last_spoken): compares the last word of the text with the voice's last word, without punctuation or vowel marks; no verdict for Chinese/Japanese or when either has no word.
+  5. scripts/new_book.py: explore() writes language/voice into a fresh style.json and starts narration.<lang>.json with the language's voice; set_voice() names character voices left in English; style_language() split out.
+  6. RTL_LANGUAGES = ar he fa ur in engine.js, contents.js (and new_book.py's RTL set); the no-letter-spacing / no-italic CSS rules are keyed on [dir="rtl"] instead of :lang(ar) in engine.css, scroll.css, explore page.css.
+  7. explore page.css: .card .close uses inset-inline-end, .card h2 uses margin-inline-end.
+  8. map.js header comment and warning name the fifth city item; scroll.js text() resets ctx.direction; paper.js endCard() sets CJK words upright; export.py rtl_marked(line, rtl_film); rat() reads the Arabic comma as a decimal sign.
+  9. checks: engine/check_i18n.py and .github/scripts/check_tts_text.py have new assertions.
+
+WHO GETS HURT decides the rank:
+  P0/P1 = a person hits it: a reader of an Arabic book sees words out of order, a mirrored or broken thing, a wrong quiz verdict; OR an English/Russian/Chinese/Japanese book that worked yesterday renders, sounds or is judged differently; OR an agent following the docs is told something false; OR a tool crashes or silently skips.
+  P2 = true and invisible. Write it down, do not stop for it.
+For every finding answer REACHABILITY first: who arrives at this code path, with what input, and what do they SEE?
+
+ATTACK THESE:
+  a. THE U+200F MARK. T() now may put an invisible character in textContent. What reads a stage text back? Anything comparing textContent to a string, measuring by character index (getStartPositionOfChar, getSubStringLength, getComputedTextLength), counting letters, slicing, typing (stream), searching (findWords, tapEls), copying, lint.py, export captions, aria/accessible names. Does textW()/canvas measuring still agree with what is drawn? Is rtlText applied twice anywhere (T then stream)? What does rtlText do with null, undefined, a number, an empty string, a string with no letters?
+  b. isRTL DEPENDS ON document.documentElement.dir. Is dir set before the first isRTL call on every page (engine sets it at load for RTL_LANGUAGES; a chapter page that has no dir attribute)? export.py / shot.py pages? A book whose page is rtl but whose text is an English sentence quoting one Arabic word?
+  c. say(): tspans and fill-opacity. Does anything else animate or measure the words say() returns (strike(), mark, a caller that fades the returned group, hide())? Does a seek backwards restore fill-opacity 0? Does the CJK character-by-character rule still apply to an Arabic line that contains Chinese? Is `anchor` honoured for start/middle/end exactly as the left-to-right path? Does the line still wrap/line-height the same?
+  d. cut_short(): find an input where a healthy clip now warns, or a truly cut clip no longer warns, that the previous code handled. Hyphenated last words, apostrophes, a last word that is an abbreviation with dots (U.S.), a trailing emoji, a text that ends with a [[mark]] already removed, Russian.
+  e. new_book.py: every --lang x kind combination. Does explore() with --lang en still behave exactly as before? Does the narration stub have the shape explore.py narration and tts.py expect? Is style_language() called when style.json already existed (it must not overwrite a user's file)?
+  f. [dir="rtl"] CSS: does keying on dir change anything for an ENGLISH page (no dir attribute)? Specificity against the rules it overrides, in media queries too.
+  g. engine-v2.13: is every place that names the release consistent; does anything now fail for a user outside a checkout beyond the missing tag itself?
+  h. A TEST THAT CANNOT FAIL: would each new assertion still pass if the code it names were reverted?
+  i. A COMMENT OR DOC THAT LIES: every sentence the fix adds to engine.md, publish.md, explore.md and to code comments.
+
+OUTPUT: print the report to stdout (do not write a file). For each finding give: severity (P0/P1/P2/QUESTION), file and line, who_it_hurts (the person and what they see), the concrete failure scenario (input -> wrong output), and the fix. Findings only - no praise, no summary of the change. End with one line: VERDICT: CHANGES_REQUIRED or VERDICT: NO_BLOCKING_FINDINGS.

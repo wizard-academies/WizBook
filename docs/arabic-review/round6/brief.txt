@@ -1,0 +1,20 @@
+ADVERSARIAL REVIEW - round 6. Produce the REPORT. Do not spend your budget exploring.
+
+You are reviewing a small FIX commit in Papermorph (a Claude Code Skill that turns a PDF into a narrated, animated web book). Arabic / right-to-left support was added and five review rounds followed; every round so far found that the previous fix had broken something. This commit is the fix for round 5. It is small; find what it broke.
+
+READ review/round6/fix.diff in the workspace (site/ engine copies are byte-identical syncs and are left out). You may open the files it touches. Do NOT run git or any shell command - you cannot approve commands and you will die with nothing.
+
+Treat it as guilty. A review that agrees with the author is a failed review.
+
+FACTS MEASURED AGAINST EDGE TTS (do not re-argue them): the WordBoundary list names a number as written ("50%", "$5", "1914", "١٩١٤", "٥٠٪", "1,000,000", "Version 2.0", "chapter 3"), sometimes with the words or numbers before it in one entry ("from 1914 to 1918", "10 to 50%", "1918 году"), and separately in a spoken list ("3", "4", "and", "5"). ar-EG-SalmaNeural says nothing for "١٬٠٠٠" or "١٫٥"; ar-SA-HamedNeural says nothing for "١٬٠٠٠"; both read "١،٠٠٠" as "١","٠٠٠". "١٠٠٠", "١.٥" are read right.
+
+WHAT THE FIX CLAIMS:
+  1. tts.py cut_short(): when the text ends with a number N, it takes the LAST number in the voice's last entry (regex \d[\d.,٫٬،]*\d|\d) and compares digits only; equal -> no warning, else (or no number) -> N is returned (warning).
+  2. tts.py misread_numbers(): a suggested spelling only for (a) d{1,3} then groups of 3 with ONE sign (٬ or ،) throughout, optionally then ٫ and digits -> signs removed, ٫ -> "."; (b) digits, one ٫ or ،, digits -> ".". Anything else -> None and the warning says to write it without the signs. The warning now says "if it is one number" and runs only when the voice starts with "ar-".
+  3. engine.js stream(): a leading U+200F or U+200E is merged with the first grapheme.
+
+WHO GETS HURT decides the rank: P0/P1 = a person hits it (an author told a healthy clip is cut or not told a cut clip is cut, a reader hearing a number missing, an English/Russian/Chinese/Japanese book changed, a crash, a doc that tells an agent something false). P2 = true and invisible. Answer REACHABILITY first for every finding.
+
+ATTACK: texts ending "3, 4 and 5.", "50%.", "$5.50.", "1,000,000.", "2.0.", "١٩١٤." against the measured lists; a voice name in another case ("AR-EG-..."), or a narration whose voice is set per speaker; a crash in any new regex; tests that cannot fail.
+
+OUTPUT: print the report to stdout (do not write a file). For each finding: severity, file and line, who_it_hurts, input -> wrong output, fix. Findings only. End with one line: VERDICT: CHANGES_REQUIRED or VERDICT: NO_BLOCKING_FINDINGS.

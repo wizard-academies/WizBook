@@ -1,0 +1,45 @@
+ADVERSARIAL REVIEW - round 1. Produce the REPORT. Do not spend your budget exploring.
+
+You are reviewing ONE change to Papermorph, a Claude Code Skill that turns a PDF into a narrated, animated web book (lessons, picture books, documentaries, upright shorts, a scroll story, an explore map). The change adds Arabic / right-to-left support across the engine and every kit.
+
+The whole change is in the file review/round1/change.diff inside this workspace (the site/ copies of engine.js/engine.css are byte-identical syncs of engine/ and are left out). READ THAT FILE. Do NOT run git diff or any shell command - you cannot approve commands and you will die with nothing. You may open the files the diff touches for context.
+
+This code has already passed several reviews, and others have since found twenty defects in it. Treat it as guilty. A review that agrees with the author is a failed review.
+
+THE GOAL the change claims to reach:
+  An Arabic book of any tier reads correctly (right word order, right alignment, letters joined, nothing mirrored that should not be), AND nothing changes for an English / Russian / Chinese / Japanese book, AND the stage's left-to-right drawing geometry (text-anchor start = left end, x grows rightwards) is untouched.
+
+What the change does, in short:
+  - engine.css: `#stage text { unicode-bidi: plaintext; }` so each SVG text takes its base direction from its first strong letter.
+  - engine.js: isRTL(str) (first \p{L} letter in Arabic/Hebrew/Syriac/Thaana/Nko), exported; stream() types by grapheme (Intl.Segmenter); slug() strips marks and tatweel; rat() reads Arabic-Indic and Persian digits and the Arabic decimal/thousands signs; new i18n keys theEnd, aiIllustration.
+  - templates/documentary film.js: say() lays RTL lines right-to-left word by word, no italics; dateChip mirrors; key/tag/doc labels drop letter-spacing and italics for RTL.
+  - templates/shorts shorts.js: marker() grows from the right on an rtl page; srcTag spacing; translated AI label.
+  - templates/picture-book paper.js: endCard default words translated, Naskh face and no italics for RTL, escapes &<>.
+  - templates/maps map.js: an optional fifth item in a city entry is the label shown; band letter-spacing.
+  - templates/scroll scroll.js/.css: canvas ctx.direction per string, physical textAlign mapping, logical CSS properties, progress bar from the right.
+  - templates/explore page.css/explore.js: logical properties, map svg kept ltr, route arrow reversed.
+  - scripts/new_book.py: --lang ar writes dir="rtl", picks a neural voice per language, writes language/voice into a freshly copied style.json.
+  - scripts/tts.py: Arabic semicolon as a clause end; the "narration cut short" check strips harakat and handles Arabic punctuation.
+  - scripts/export.py: RLM (U+200F) before RTL lines in the .srt; END_CARD kicker spacing.
+  - scripts/lint.py: slug matches the JS slug (marks and tatweel stripped).
+  - engine/check_i18n.py: new browser assertions for the above.
+  - docs under .claude/skills/papermorph/references/.
+
+WHO GETS HURT decides the rank, not whether the code is technically wrong:
+  P0/P1 = a person hits it: a child reading an Arabic lesson sees words in the wrong order, a mirrored diagram, a wrong number in a quiz answer, broken (disjoined) letters, a caption that runs off frame; OR an English/other-language book that worked yesterday now renders or sounds differently; OR an agent following the docs is told something false and builds a broken book; OR a tool crashes or silently does nothing on an input it used to handle.
+  P2 = true and invisible: style, a branch nobody reaches, a nicer test. Write it down, do not stop for it.
+For every finding, first answer REACHABILITY: who arrives at this code path, with what input, and what do they SEE?
+
+ASK THESE FOUR QUESTIONS - they caught the most in past rounds:
+  1. THE ARITHMETIC / GEOMETRY. Every coordinate at every case: an RTL line that wraps, a line mixing Arabic and an English word or a number, a line that STARTS with a digit or punctuation or an English word, an empty string, one word, a string with only digits. Does say() still reach the same total width? Does dateChip land inside the frame? Does rat() turn "1,5" or "١٬٥٠٠" or "٣٫٥" into the right number under BOTH decimal-sign settings? Does a regex range like [٠-٩] contain only what it claims?
+  2. BUILT BUT UNREACHABLE. Is each new thing actually reached by a real book? Is isRTL visible where film.js / shorts.js / paper.js / map.js call it (load order, global scope)? Does new_book.py's voice/dir reach the page that is actually served? Is the fifth city item documented where an agent will find it?
+  3. A TEST THAT CANNOT FAIL. Would each new assertion in check_i18n.py still pass if the code it names were deleted or reverted? Does it measure the effect on screen or only that a string exists?
+  4. A COMMENT OR DOC THAT LIES. Does every doc sentence the diff adds describe what the code does now? Open the code before believing the doc.
+
+Also check specifically:
+  - Anything that changes output for a NON-Arabic book (English italics, letter-spacing, anchors, slugs of English words, rat() on English inputs, srt lines, voices for languages that already had one).
+  - Python/JS slug parity on inputs with marks, tatweel, Latin accents (e.g. "café", "naïve") - did stripping \p{M} change an existing English/French slug that other pages link to?
+  - Canvas: ctx.direction left set for the next draw call; textAlign 'start'/'end' mapping under rtl.
+  - HTML/SVG injection where text is interpolated.
+
+OUTPUT: print the report to stdout (do not write a file). For each finding give: severity (P0/P1/P2/QUESTION), file and line, who_it_hurts (the person and what they see), the concrete failure scenario (input -> wrong output), and the fix. Findings only - no praise, no summary of the change.

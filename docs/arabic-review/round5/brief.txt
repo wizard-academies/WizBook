@@ -1,0 +1,37 @@
+ADVERSARIAL REVIEW - round 5. Produce the REPORT. Do not spend your budget exploring.
+
+You are reviewing a FIX commit in Papermorph, a Claude Code Skill that turns a PDF into a narrated, animated web book (lessons, picture books, documentaries, shorts, a scroll story, an explore map). An earlier commit added Arabic / right-to-left support; four review rounds found defects; this commit is the fix for round 4, and every round so far found that the previous fix had broken something (a clipped narration that stopped warning, a correct answer marked wrong). The most likely place for the next defect is this fix.
+
+READ THESE FILES in the workspace. Do NOT run git or any shell command - you cannot approve commands and you will die with nothing:
+  review/round5/fix.diff     the fix under review (site/ engine copies are byte-identical syncs of engine/ and are left out)
+  review/round5/whole.diff   the whole Arabic change including the fix, for context
+You may open the files the diff touches.
+
+This code has already passed several reviews, and others have since found defects in it each time. Treat it as guilty. A review that agrees with the author is a failed review.
+
+FACTS MEASURED AGAINST EDGE TTS (2026-11-23; do not re-argue them, build on them). Edge's WordBoundary list reports:
+  "Interest rates rose to 50%." -> last entry "50%"; "It cost $5." -> "$5"; "See chapter 3." -> "chapter 3"; "Version 2.0." -> "Version 2.0";
+  "The war lasted from 1914 to 1918." -> "from 1914 to 1918" (ONE entry); "It went from 10 to 50%." -> "10 to 50%"; "Read pages 3, 4 and 5." -> "3","4","and","5";
+  "In the year 1914." -> "1914"; "It was 1,000,000." -> "1,000,000"; Russian "Война закончилась в 1918 году." -> "1918 году"; Arabic "عام ١٩١٤." -> "١٩١٤", "٥٠٪." -> "٥٠٪".
+  ar-EG-SalmaNeural says NOTHING for "١٬٠٠٠" or "١٫٥" (same audio bytes as the sentence without the number) and the word list skips them; ar-SA-HamedNeural says nothing for "١٬٠٠٠" but reads "١٫٥"; both read "١،٠٠٠" as two entries "١","٠٠٠". "١٠٠٠", "١.٥", "1.5", "1,000" are read right.
+
+WHAT THE FIX CLAIMS (read review/round5/fix.diff for the exact code):
+  1. engine/engine.js rat(): the decision for the Arabic comma ، now runs AFTER ٫ -> ".", ٬ handling, sign and currency removal: a string that is exactly -?d{1,3}(،ddd)+(.d+)? has its ، removed (thousands); otherwise every ، becomes ".". Then the old DECIMAL_SIGN rules run.
+  2. scripts/tts.py cut_short(): a text ending with a number (now including ٫ ٬ ، inside it) needs the digits of the voice's last entry to END WITH the digits of that number; otherwise that number is returned (warning). The word path is unchanged except a dead guard removed.
+  3. scripts/tts.py misread_numbers(clean) and its call in main(): for Edge only, every number written with ٫ ٬ or ، between digits is printed as a WARNING with a suggested spelling (٬ removed, ٫ -> ".", ، removed when it groups thousands, else ".").
+  4. engine.js stream(): when the typed string starts with U+200F, the mark is merged with the first grapheme so the first visible step shows a letter.
+  5. Docs: engine.md, scroll.md, sound.md.
+
+WHO GETS HURT decides the rank:
+  P0/P1 = a person hits it: a reader of an Arabic book sees words out of order, hears a number missing, or gets a wrong quiz verdict; OR an English/Russian/Chinese/Japanese book that worked yesterday renders, sounds or is judged differently; OR a narration clip that stops early passes with no warning, or a healthy one warns; OR an agent following the docs is told something false; OR a tool crashes.
+  P2 = true and invisible. Write it down, do not stop for it.
+For every finding answer REACHABILITY first: who arrives at this code path, with what input, and what do they SEE?
+
+ATTACK THESE:
+  a. rat(): every answer judged correctly by the ORIGINAL rat (in whole.diff) must be judged the same in English, Russian (DECIMAL_SIGN ","), Chinese and Japanese books: does moving the ، step after the currency/sign step change any string without ،? Then ، under both decimal signs: "-١،٠٠٠", "−1،000", "1،000،5", "1، 000", "،5", "1،000,5", "١٬٠٠٠،٥".
+  b. cut_short(): using ONLY the measured Edge lists above, find a healthy clip that now warns or a cut clip that is now silent. Mind texts ending "3, 4 and 5.", "1918 году.", "10 to 50%.", a number followed by a closing quote or bracket, and digits of other scripts.
+  c. misread_numbers(): false warnings (an English book? a date like 12،3? a phone number?), a crash, a suggestion that is itself misread, or the warning firing on text the voice never receives ({{shown|spoken}} pairs: which side is checked?).
+  d. stream(): any caller whose string starts with U+200F followed by a combining mark or nothing.
+  e. Tests that cannot fail; docs or comments that do not match the code.
+
+OUTPUT: print the report to stdout (do not write a file). For each finding: severity (P0/P1/P2/QUESTION), file and line, who_it_hurts, the concrete failure scenario (input -> wrong output), and the fix. Findings only. End with one line: VERDICT: CHANGES_REQUIRED or VERDICT: NO_BLOCKING_FINDINGS.

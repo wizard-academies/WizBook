@@ -1,0 +1,29 @@
+ADVERSARIAL REVIEW - round 4. Produce the REPORT. Do not spend your budget exploring.
+
+You are reviewing a FIX commit in Papermorph, a Claude Code Skill that turns a PDF into a narrated, animated web book (lessons, picture books, documentaries, shorts, a scroll story, an explore map). An earlier commit added Arabic / right-to-left support; three review rounds found defects; this commit is the fix for round 3, and each of the last two rounds found that the previous fix had broken something (a clipped narration that stopped warning, a correct decimal answer marked wrong). The most likely place for the next defect is a fix: in past rounds three of five serious defects were created by the fix for the one before.
+
+READ THESE FILES in the workspace. Do NOT run git or any shell command - you cannot approve commands and you will die with nothing:
+  review/round4/fix.diff     the fix under review (site/ engine copies are byte-identical syncs of engine/ and are left out)
+  review/round4/whole.diff   the whole Arabic change including the fix, for context
+You may open the files the diff touches.
+
+This code has already passed several reviews, and others have since found defects in it each time. Treat it as guilty. A review that agrees with the author is a failed review.
+
+WHAT THE FIX CLAIMS (read review/round4/fix.diff for the exact code):
+  1. scripts/tts.py cut_short(clean, last_spoken): CJK -> None. If the text ends with a number (regex (\d[\d.,]*\d|\d)\W*$): None when last_spoken holds a digit, else that number (the clip is cut). Otherwise compare the last letter-word of the text with the voice's last letter-word, stripped of ' and - at the ends, vowel marks and case; "twenty-one" ending "one" counts as said; a voice ending on a number while the text ends in a word is cut. Assumption: Edge reports a number in its word list as written (1914), not spelled out.
+  2. engine/engine.js rat(): after Arabic-Indic digits become 0-9, a string that is exactly [sign]d{1,3}(،ddd)+ has its ، removed (thousands); otherwise every ، becomes "." (decimal). Then the old rules (٫ -> ".", ٬ grouping, the DECIMAL_SIGN rules) run as before.
+  3. isRTL / rtlText (engine.js), isRTL (scroll.js), rtl_marked (export.py): a string that begins with U+200F is right to left and one that begins with U+200E is left to right, before any other rule; rtlText never adds a second mark; rtl_marked leaves a line that begins with either mark alone. export.py: rtl_film is true when at least half (and more than zero) of the cues hold an Arabic letter.
+  4. maps/lib/map.js: routes and mapBand treat t1 == null as "stays", like cities.
+
+WHO GETS HURT decides the rank:
+  P0/P1 = a person hits it: a reader of an Arabic book sees words out of order or a wrong quiz verdict; OR an English/Russian/Chinese/Japanese book that worked yesterday renders, sounds or is judged differently; OR a narration clip that stops early passes with no warning, or a healthy one warns; OR an agent following the docs is told something false; OR a tool crashes.
+  P2 = true and invisible. Write it down, do not stop for it.
+For every finding answer REACHABILITY first: who arrives at this code path, with what input, and what do they SEE?
+
+ATTACK THESE:
+  a. rat(): every answer that was judged correctly BEFORE the whole Arabic change (in whole.diff, the original rat) must still be judged the same in English, Russian (DECIMAL_SIGN ","), Chinese, Japanese books. Then the ، cases under both decimal signs: "1،500" (ambiguous: is reading it as 1500 the same choice the engine makes for "1,500"?), "-١،٠٠٠", "١،٠٠٠٫٥", "1،000،5", currency "$1،000", "١ ،٥", "،٥".
+  b. cut_short(): healthy clips that now warn, cut clips that are now silent, against the ORIGINAL code (isascii version, in whole.diff) as well: "Chapter 3." / "3"; "It costs $5." / "5"; "version 2.0." ; "in 1914–1918." ; "page 12a."; a text ending "١٩١٤." (Arabic-Indic digits) with Edge returning "١٩١٤"; Russian "в 1914 году."; a text ending with a percentage "50%".
+  c. The direction marks: does any caller pass text whose first character could be U+200E/U+200F by accident (captions, narration, rtlText output fed back)? Does stream() of a marked string type the mark as a visible step?
+  d. Tests that cannot fail; docs (engine.md, films.md, code comments) that do not match the code.
+
+OUTPUT: print the report to stdout (do not write a file). For each finding: severity (P0/P1/P2/QUESTION), file and line, who_it_hurts, the concrete failure scenario (input -> wrong output), and the fix. Findings only. End with one line: VERDICT: CHANGES_REQUIRED or VERDICT: NO_BLOCKING_FINDINGS.

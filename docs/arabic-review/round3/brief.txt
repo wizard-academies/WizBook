@@ -1,0 +1,32 @@
+ADVERSARIAL REVIEW - round 3. Produce the REPORT. Do not spend your budget exploring.
+
+You are reviewing a FIX commit in Papermorph, a Claude Code Skill that turns a PDF into a narrated, animated web book (lessons, picture books, documentaries, shorts, a scroll story, an explore map). An earlier commit added Arabic / right-to-left support; two review rounds found defects; this commit is the fix for round 2, and round 2 found that the fix for round 1 had broken three things. The most likely place for the next defect is a fix: in past rounds three of five serious defects were created by the fix for the one before.
+
+READ THESE FILES in the workspace. Do NOT run git or any shell command - you cannot approve commands and you will die with nothing:
+  review/round3/fix.diff     the fix under review (site/ engine copies are byte-identical syncs of engine/ and are left out)
+  review/round3/whole.diff   the whole Arabic change including the fix, for context
+You may open the files the diff touches.
+
+This code has already passed several reviews, and others have since found defects in it each time. Treat it as guilty. A review that agrees with the author is a failed review.
+
+WHAT THE FIX CLAIMS:
+  1. engine/engine.js isRTL(str): true when the first letter is right-to-left script; otherwise, only in a book whose <html dir="rtl">, true when the words that contain a right-to-left LETTER (RTL_LETTER: a letter of the Arabic/Hebrew/Syriac/Thaana/Nko scripts; digits are not letters) are at least half of the words that contain any letter. 'Newton قال ذلك' and 'DNA هو الحمض النووي' are true there; 'The word for cat is قط in Arabic.', 'x = ٣', 'F = ma' are false. In a left-to-right book: first letter only, as before the whole change. rtlText() adds U+200F to a string that isRTL but opens with a Latin letter, never to one that already starts with U+200F. scroll.js has the same isRTL; export.py rtl_marked() applies the same word rule to .srt lines of a mostly-Arabic film.
+  2. maps/lib/map.js: a city's t1 that is null or left out keeps the label (code: l.t1 == null).
+  3. scripts/tts.py cut_short(): no verdict when the text ends with a number or holds CJK; a voice whose last token is a number (no letters) while the text ends in a word is cut short; comparison is case-insensitive and "twenty-one" ending "one" counts as said.
+  4. engine.js rat(): ، (Arabic comma) is read exactly as "," (a thousands group where DECIMAL_SIGN is ".", the decimal sign where it is ","); ٫ stays a decimal point.
+  5. new_book.py start_scroll() calls style_language() (language only; scroll's voice is a string "none: ...").
+  6. film.js say(): the right-to-left branch splits CJK runs inside each word into their own tspans; the RLM does not count in the timing. paper.js endCard() passes words through rtlText. scroll.js text() restores the ctx.direction it found.
+
+WHO GETS HURT decides the rank:
+  P0/P1 = a person hits it: a reader of an Arabic book sees words out of order, a mirrored or broken thing, a wrong quiz verdict; OR an English/Russian/Chinese/Japanese book that worked yesterday renders, sounds or is judged differently; OR an agent following the docs is told something false; OR a tool crashes or silently skips.
+  P2 = true and invisible. Write it down, do not stop for it.
+For every finding answer REACHABILITY first: who arrives at this code path, with what input, and what do they SEE?
+
+ATTACK THESE:
+  a. The word rule. Find a REAL Arabic-book line where the rule picks the wrong direction and a reader sees it: tie cases, a Latin name of three words, a formula with an Arabic unit, a line split by hyphens or slashes (no spaces), punctuation glued to words, an Arabic word with harakat only, Persian/Urdu letters, a line that starts with a quotation mark or bracket. Is it the same in engine.js, scroll.js and export.py, character for character?
+  b. rat() with ، under BOTH decimal settings and with the existing comma rules: "1،000،000", "٣،٥", "1، 5", a Russian book.
+  c. cut_short(): find a healthy clip that now warns or a cut clip that is now silent, against BOTH the round-1 code and the original isascii() code (in whole.diff).
+  d. map.js: anything else that reads t1 (routes have their own); a city entry with t1 = 0.
+  e. Tests that cannot fail; comments and docs (engine.md, publish.md, scroll.md, the code comments) that do not match the code.
+
+OUTPUT: print the report to stdout (do not write a file). For each finding give: severity (P0/P1/P2/QUESTION), file and line, who_it_hurts (the person and what they see), the concrete failure scenario (input -> wrong output), and the fix. Findings only. End with one line: VERDICT: CHANGES_REQUIRED or VERDICT: NO_BLOCKING_FINDINGS.
