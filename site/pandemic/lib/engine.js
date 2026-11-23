@@ -403,9 +403,43 @@ function isRTL(str) {
   const words = s.split(/\s+/).filter(w => /\p{L}/u.test(w)), rtl = words.filter(w => RTL_LETTER.test(w)).length;
   return rtl > 0 && 2 * rtl >= words.length;
 }
+// An expression inside a right-to-left line keeps its left-to-right order. Left to the browser, the numbers of
+// 'لو 5 + x = 7' are ordered with the sentence and the reader sees 'x = 7 + 5'; in a card the options 'x = 10' and
+// '10 = x' look alike. ltrMaths(str) wraps each expression in a left-to-right isolate (U+2066 ... U+2069): numbers and
+// Latin or Greek names joined by signs, one of them at least being = + × ÷ * < > ≤ ≥ ≠ ^ or − (U+2212). Left as they
+// are: a run joined only by - or / (a range of years, a date); one that touches other Latin text, a number or a sign
+// (a web address, '5 km + 3 km', 'obj.x = 5'); and one whose neighbour across a sign is an Arabic name ('س + ٣ = ٧'
+// reads with its sentence). A bracket whose partner is outside the expression stays outside it.
+const RLM = String.fromCharCode(0x200F), LRM = String.fromCharCode(0x200E), LRI = String.fromCharCode(0x2066), PDI = String.fromCharCode(0x2069);
+const EXPRESSION = (() => {
+  const name = String.raw`[\p{Script=Latin}\p{Script=Greek}][\p{Script=Latin}\p{Script=Greek}\p{Nd}_]*`;
+  const number = String.raw`\p{Nd}+(?:[.,٫٬]\p{Nd}+)*`;
+  const atom = String.raw`(?:${number}(?:${name})?[%٪°]?|${name}(?:\((?:${number}|${name})?\))?)`;   // 5, 1.5, 2x, 50%, x, f(x)
+  const operand = String.raw`[-−+]?[(\[]*${atom}[)\]]*`;
+  const sign = String.raw`(?:[=!<>+\-*/]=|\*\*|[=+×÷*<>≤≥≠^−/\-])`;
+  return new RegExp(String.raw`${operand}(?:[^\S\n]*${sign}[^\S\n]*${operand})+`, 'gu');
+})();
+const EXPRESSION_SIGN = /[=+×÷*<>≤≥≠^−]/, EXPRESSION_GLUE = /[\p{Script=Latin}\p{Script=Greek}\p{Nd}=+×÷*<>≤≥≠^−\/\-]/u;
+function ltrMaths(str) {
+  const s = String(str ?? '');
+  return s.replace(EXPRESSION, (m, i) => {
+    if (!EXPRESSION_SIGN.test(m)) return m;
+    const before = s.slice(0, i), after = s.slice(i + m.length), p = before.slice(-1), n = after[0];
+    if (p && p !== RLM && p !== LRM && !/[\s(\[«"'“‘،:؛]/.test(p)) return m;
+    if (n && !/[\s)\]».,،؛؟?!:"'”’]/.test(n)) return m;
+    if (EXPRESSION_GLUE.test(before.trimEnd().slice(-1)) || EXPRESSION_GLUE.test(after.trimStart()[0] ?? '')) return m;
+    let a = 0, b = m.length;
+    const opens = (m.match(/[(\[]/g) || []).length, closes = (m.match(/[)\]]/g) || []).length;
+    for (let k = opens - closes; k > 0 && /[(\[]/.test(m[a]); k--) a++;
+    for (let k = closes - opens; k > 0 && /[)\]]/.test(m[b - 1]); k--) b--;
+    return m.slice(0, a) + LRI + m.slice(a, b) + PDI + m.slice(b);
+  });
+}
 function rtlText(str) {
   const s = String(str ?? '');
-  return s[0] !== '\u200F' && isRTL(s) && !RTL_LETTER.test(s.match(/\p{L}/u)[0]) ? '\u200F' + s : str;
+  if (!isRTL(s)) return str;
+  const m = ltrMaths(s), out = m[0] !== RLM && !RTL_LETTER.test(m.match(/\p{L}/u)[0]) ? RLM + m : m;
+  return out === s ? str : out;
 }
 // A citation drawn in the picture that opens its source (REFS from ../refs.js, built by scripts/refs.py) in a new tab.
 // cite(p, key, opts) takes T's options; str overrides the label (default REFS[key].cite). Returns the <a>; animate it like T.
@@ -703,8 +737,16 @@ function pulse(e, t0, k = 1.7) { tw(e, { s: k }, t0, .22, out); tw(e, { s: 1 }, 
 const GRAPHEMES = typeof Intl.Segmenter === 'function' ? new Intl.Segmenter(undefined, { granularity: 'grapheme' }) : null;
 const graphemes = str => GRAPHEMES ? Array.from(GRAPHEMES.segment(str), s => s.segment) : Array.from(str);
 function stream(t, str, t0, dur) {
-  const g = graphemes(String(rtlText(str)));
-  if ((g[0] === '\u200F' || g[0] === '\u200E') && g.length > 1) g.splice(0, 2, g[0] + g[1]);   // a mark is invisible: it rides with the first letter
+  // a direction mark and the opening of an isolate are invisible: each rides with the letter after it, an isolate's
+  // close with the letter before it, so no step of the typing shows nothing new
+  const g = [];
+  let lead = '';
+  for (const c of graphemes(String(rtlText(str)))) {
+    if (c === RLM || c === LRM || c === LRI) lead += c;
+    else if (c === PDI && g.length && !lead) g[g.length - 1] += c;
+    else { g.push(lead + c); lead = ''; }
+  }
+  if (lead) g.push(lead);
   prog(q => { t.textContent = g.slice(0, Math.round(q * g.length)).join(''); }, t0, dur, lin); }
 function mix(a, b, q) {
   const h = c => [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16));
@@ -939,10 +981,11 @@ function h(tag, cls, kids = []) {
   for (const k of [].concat(kids)) e.append(k);
   return e;
 }
-// Rich text: strings, DOM nodes, or $m(...) inline math.
+// Rich text: strings, DOM nodes, or $m(...) inline math. In a right-to-left page a string's expressions are isolated (ltrMaths).
 function rich(parts, size = 28) {
   const s = document.createElement('span');
-  for (const p of [].concat(parts)) s.append(typeof p === 'string' || p instanceof Node ? p : mathEl(p.m, size));
+  const rtl = document.documentElement.dir === 'rtl';   // the card reads from the right: an expression typed in its text keeps its own order
+  for (const p of [].concat(parts)) s.append(typeof p === 'string' ? (rtl ? ltrMaths(p) : p) : p instanceof Node ? p : mathEl(p.m, size));
   return s;
 }
 // A card at pos; a band card keeps its bottom on the stage: when its content grows (a long question, feedback),
@@ -2020,7 +2063,7 @@ function ui() {
       text = (captions || forced || TIMINGS[b.id].forced) && !(end != null && P.t > end + (b.pre || 0)) ? line : '';
     }
   }
-  if (text !== capText) { capText = text; $('caption').textContent = text; $('caption').hidden = !text; }
+  if (text !== capText) { capText = text; $('caption').textContent = document.documentElement.dir === 'rtl' ? ltrMaths(text) : text; $('caption').hidden = !text; }
   if (text) placeCaption(asking);
 }
 // Above a bottom band, or centred left of a card in the bottom right; elsewhere the caption keeps its place.
@@ -2219,7 +2262,7 @@ function boot() {
   setInterval(() => { if (document.hidden) frameStep(performance.now(), 1.5); }, 250);
 }
 return { TRANSLATIONS, PORTRAIT, SW, SH, LANGUAGE, translate, DECIMAL_SIGN, isShortcut, NS, UI, BOOK, bookSetting,
-  COL, MATH, NAME, BAND, RIGHT, TOPR, SCREEN, SORT_SCREEN, $m, mk, st, put, render, G, path, T, isRTL, rtlText, cite, ctx2d, textW, F,
+  COL, MATH, NAME, BAND, RIGHT, TOPR, SCREEN, SORT_SCREEN, $m, mk, st, put, render, G, path, T, isRTL, rtlText, ltrMaths, cite, ctx2d, textW, F,
   R, E, TX, $tex, texGraphic, texPart, OV, M, chip, tokens, layRow, collapse, mathEl, io, out, back, lin, tw, prog,
   show, hide, draw, pop, pulse, stream, mix, evalTo, soft, clockRun, camera, scene, S, AXIS, X, Y0, num, reset, tick,
   dot, arrow, panel, retire, header, fx, fxp, finishFx, pulseFx, shakeFx, floatText, TF, $, kbd, sources, uiW, SCORE,
@@ -2236,7 +2279,7 @@ const TRANSLATIONS = ENGINE.TRANSLATIONS, PORTRAIT = ENGINE.PORTRAIT, SW = ENGIN
   bookSetting = ENGINE.bookSetting, COL = ENGINE.COL, MATH = ENGINE.MATH, NAME = ENGINE.NAME, BAND = ENGINE.BAND,
   RIGHT = ENGINE.RIGHT, TOPR = ENGINE.TOPR, SCREEN = ENGINE.SCREEN, SORT_SCREEN = ENGINE.SORT_SCREEN, $m = ENGINE.$m,
   mk = ENGINE.mk, st = ENGINE.st, put = ENGINE.put, render = ENGINE.render, G = ENGINE.G, path = ENGINE.path,
-  T = ENGINE.T, isRTL = ENGINE.isRTL, rtlText = ENGINE.rtlText, cite = ENGINE.cite, ctx2d = ENGINE.ctx2d, textW = ENGINE.textW, F = ENGINE.F, R = ENGINE.R,
+  T = ENGINE.T, isRTL = ENGINE.isRTL, rtlText = ENGINE.rtlText, ltrMaths = ENGINE.ltrMaths, cite = ENGINE.cite, ctx2d = ENGINE.ctx2d, textW = ENGINE.textW, F = ENGINE.F, R = ENGINE.R,
   E = ENGINE.E, TX = ENGINE.TX, $tex = ENGINE.$tex, texGraphic = ENGINE.texGraphic, texPart = ENGINE.texPart,
   OV = ENGINE.OV, M = ENGINE.M, chip = ENGINE.chip, tokens = ENGINE.tokens, layRow = ENGINE.layRow,
   collapse = ENGINE.collapse, mathEl = ENGINE.mathEl, io = ENGINE.io, out = ENGINE.out, back = ENGINE.back,

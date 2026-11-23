@@ -433,6 +433,74 @@ async def check_arabic_book(browser, errors):
     await page.close()
 
 
+async def check_arabic_maths(browser, errors):
+    """An expression inside a right-to-left line keeps its left-to-right order: on the stage, in a card, in a caption."""
+    page = await open_lesson(browser, "ar", errors)
+    # ltrMaths(): what is isolated (shown here between ⟦ and ⟧) and what is left to the sentence
+    cases = {
+        "لو 5 + x = 7 يبقى x = 2": "لو ⟦5 + x = 7⟧ يبقى ⟦x = 2⟧",
+        "و ٥ + ٢ = ٧ صح": "و ⟦٥ + ٢ = ٧⟧ صح",
+        "اطرح: 7 - 2 = 5.": "اطرح: ⟦7 - 2 = 5⟧.",
+        "10 = x": "⟦10 = x⟧",
+        "قيمة (x + 2) × 3 = 15 صح": "قيمة ⟦(x + 2) × 3 = 15⟧ صح",
+        "جرّب (x = 5 مثلا) كده": "جرّب (⟦x = 5⟧ مثلا) كده",   # a bracket whose partner is outside stays outside
+        "x = 5، y = 6": "⟦x = 5⟧، ⟦y = 6⟧",
+        "7 − 2 صح": "⟦7 − 2⟧ صح",
+        # left alone: a range and a date; an Arabic name across a sign; other Latin text, a number or a sign beside it
+        "الحرب 1914 - 1918 طويلة": None, "7 - 2 صح": None, "يوم 5/3/2024 كان": None, "صفحة 10-12": None,
+        "س + ٣ = ٧ معادلة": None, "٣ + ٤ = س": None, "الناتج = 7 + 2": None,
+        "المسافة 5 km + 3 km كبيرة": None, "x = 5 Python بتطبع": None,
+        "افتح https://x.com/?a=1 الآن": None, "اكتب obj.x = 5 هنا": None, "و5 + 2 = 7": None,
+        "اكتب print(x) عشان": None, "السعر ١٬٥٠٠ جنيه، والخصم ٢٥٪": None, "C++ لغة و x => y سهم": None,
+    }
+    got = await page.evaluate("cs => cs.map(c => ltrMaths(c).replaceAll(String.fromCharCode(0x2066), '⟦').replaceAll(String.fromCharCode(0x2069), '⟧'))", list(cases))
+    for (text, want), have in zip(cases.items(), got):
+        assert have == (want or text), f"ltrMaths({text!r}) is {have!r}"
+    assert await page.evaluate("['لو 5 + x = 7', 'x = ٣ معادلة'].every(c => ltrMaths(ltrMaths(c)) === ltrMaths(c) && rtlText(rtlText(c)) === rtlText(c))"), "isolated twice"
+    # The stage: 5 is left of x, x left of 7, and the whole expression left of the Arabic word that opens the line
+    at = await page.evaluate("""(() => {
+      const t = T(document.getElementById('stage'), 'لو 5 + x = 7 يبقى', { x: 800, y: 300 }), set = t.textContent, x = c => t.getStartPositionOfChar(set.indexOf(c)).x;
+      const out = { five: x('5'), x: x('x'), seven: x('7'), lam: x('ل'), maths: rtlText('F = ma') === 'F = ma' && T(document.getElementById('stage'), '5 + x = 7').textContent === '5 + x = 7' };
+      t.remove();
+      return out; })()""")
+    assert at["five"] < at["x"] < at["seven"] < at["lam"], f"stage: the expression is out of order: {at}"
+    assert at["maths"], "a line that is only maths changed"
+    # A card: the options 'x = 10' and '10 = x' no longer look alike, and a reason keeps its sum in order
+    card = await page.evaluate("""(() => {
+      const left = (str, a, b) => {
+        const p = document.createElement('p'); p.append(rich([str])); document.getElementById('ui').append(p);
+        const node = p.querySelector('span').firstChild, text = node.data, r = document.createRange();
+        const at = c => { const i = text.indexOf(c); r.setStart(node, i); r.setEnd(node, i + 1); return r.getBoundingClientRect().left; };
+        const out = at(a) < at(b);
+        p.remove();
+        return out; };
+      return [left('10 = x', '1', 'x'), left('x = 10', 'x', '1'), left('الصندوق جواه 5، و 5 + 2 = 7.', '+', '='), left('و 9 - x = 4 صح', '9', 'x')]; })()""")
+    assert card == [True, True, True, True], f"card: an expression is out of order: {card}"
+    # stream(): the isolate's marks are invisible, so each ride with a letter: no step of the typing shows nothing new
+    steps = await page.evaluate("""(() => {
+      const t = T(document.getElementById('stage'), ''), seen = [];
+      stream(t, 'و x = ٣ صح', 0, 1);
+      for (let k = 0; k <= 400; k++) { evalTo(k / 400); if (t.textContent !== seen.at(-1)) seen.push(t.textContent); }
+      const visible = s => [...s].filter(c => ![0x200E, 0x200F, 0x2066, 0x2069].includes(c.codePointAt(0))).length;
+      t.remove();
+      return seen.map(visible); })()""")
+    assert steps == list(range(steps[0], steps[0] + len(steps))) and steps[-1] == len("و x = ٣ صح"), f"stream: a step shows nothing new: {steps}"
+    # A caption reads from the right too
+    await page.evaluate("TIMINGS.idea.cues = [[0, 'لو 5 + x = 7 يبقى x = 2']]; setCaptions(true, false); hideCover(); seek(1, false)")
+    await page.wait_for_function("document.getElementById('caption').textContent")
+    caption = await page.evaluate("document.getElementById('caption').textContent.replaceAll(String.fromCharCode(0x2066), '⟦').replaceAll(String.fromCharCode(0x2069), '⟧')")
+    assert caption == "لو ⟦5 + x = 7⟧ يبقى ⟦x = 2⟧", f"caption: {caption!r}"
+    await page.close()
+    # An English page is untouched: its cards and captions set the string as written
+    page = await open_lesson(browser, "en", errors)
+    assert await page.evaluate("['10 = x', 'Sum: 5 + 2 = 7.'].every(c => ltrMaths(c) !== c && rich([c]).textContent === c && T(document.getElementById('stage'), c).textContent === c)"), "English text changed"
+    await page.evaluate("TIMINGS.idea.cues = [[0, 'Sum: 5 + x = 7.']]; setCaptions(true, false); hideCover(); seek(1, false)")
+    await page.wait_for_function("document.getElementById('caption').textContent")
+    assert await page.evaluate("document.getElementById('caption').textContent") == "Sum: 5 + x = 7.", "English caption changed"
+    await page.close()
+    print("PASS Arabic maths: an expression inside a right-to-left line keeps its order on the stage, in cards and in captions")
+
+
 async def main():
     errors = []
     async with async_playwright() as playwright:
@@ -444,6 +512,7 @@ async def main():
         await check_cjk(browser, errors)
         await check_arabic_lesson(browser, errors)
         await check_arabic_book(browser, errors)
+        await check_arabic_maths(browser, errors)
         await browser.close()
     assert not errors, errors
     print("PASS no page errors, console errors or failed requests")
