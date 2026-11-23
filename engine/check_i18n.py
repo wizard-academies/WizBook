@@ -36,8 +36,12 @@ def at_base_ref(path):
     if not BASE_REF:
         return None
     relative = path.relative_to(ROOT).as_posix()
-    result = subprocess.run(["git", "show", f"{BASE_REF}:{relative}"], cwd=ROOT, capture_output=True)
-    return result.stdout.decode("utf-8") if result.returncode == 0 else None
+    # a BASE_REF from before WizBook renamed the Skill keeps it under its Papermorph name
+    for name in dict.fromkeys((relative, relative.replace(".claude/skills/wizbook/", ".claude/skills/papermorph/", 1))):
+        result = subprocess.run(["git", "show", f"{BASE_REF}:{name}"], cwd=ROOT, capture_output=True)
+        if result.returncode == 0:
+            return result.stdout.decode("utf-8")
+    return None
 
 
 ENGINE_FILES = ("engine.js", "engine.css", "volume.js", "volume.css", "book.css", "units.js", "units.css", "contents.js", "contents.css")
@@ -123,9 +127,12 @@ async def lesson_snapshot(page):
 
 
 async def check_english_unchanged(browser, errors):
-    if BASE_FILES["book"] is None or None in BASE_FILES.values():
-        print(f"SKIP English identity: engine or book template not found at BASE_REF={BASE_REF!r}")
+    if not BASE_REF:
+        print("SKIP English identity: BASE_REF is empty")
         return
+    # a base that cannot be read would leave English unguarded while the check passes, so it fails instead
+    assert BASE_FILES["book"] is not None, (f"English identity: the book template is not at BASE_REF={BASE_REF!r} "
+                                            "(set BASE_REF to a commit that has it, or to an empty string to skip)")
     before = await open_lesson(browser, "base", errors)
     after = await open_lesson(browser, "en", errors)
     names = ("player markup", "quick check", "wrong-answer feedback", "finish card")

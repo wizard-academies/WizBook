@@ -1,0 +1,17 @@
+ADVERSARIAL REVIEW - round 7: a RENAME. Produce the REPORT. Do not spend your budget exploring: you have 20 minutes, report by then.
+
+Papermorph (MIT, github.com/DozenTwelve/Papermorph) is a Claude Code Skill that turns a PDF into a narrated, animated web book. This branch is a modified version named WizBook, to be published as the GitHub fork wizard-academies/WizBook. The commit under review moves the Skill from .claude/skills/papermorph to .claude/skills/wizbook, renames it, points the engine download at wizard-academies/WizBook@engine-v2.13, writes a new README.md and README.ar.md, adds a second copyright line to LICENSE, and adds docs/arabic-review/ (a record of six earlier review rounds).
+
+READ review/round7/rename.diff in the workspace (site/ engine copies and the copied review files are left out). You may open any file. Do NOT run git or any shell command - you cannot approve commands and you will die with nothing.
+
+Treat it as guilty. A review that agrees with the author is a failed review.
+
+WHO GETS HURT decides the rank: P0/P1 = a person hits it: someone runs `npx skills add wizard-academies/WizBook --skill wizbook` or types /wizbook and it fails or loads the wrong thing; an agent following SKILL.md, AGENTS.md or a reference is sent to a path that does not exist; a book made outside this checkout cannot fetch its engine; a reader loses saved progress or volume; CI breaks; a check passes while checking nothing; the README or LICENSE says something false, takes credit that is Papermorph's, or breaks the MIT terms; a file publishes someone's private data. P2 = true and invisible.
+
+ATTACK:
+  a. Every place that still names .claude/skills/papermorph, `papermorph` as the skill name, or /papermorph and would now break (scripts that build paths, CI, docs, templates, tests, the OpenCode command). Things deliberately kept: localStorage keys papermorph:volume and papermorph:review:, ~/.cache/papermorph and ~/.config/papermorph, SCORM globals PapermorphSCORM / PAPERMORPH_SCORM_CONFIG, links to papermorph.diamonddoge.org books. Say if keeping any of them is wrong.
+  b. engine.py DEFAULT and the four style.json "source" values: what happens to a new book before the tag engine-v2.13 exists in wizard-academies/WizBook? Is anything else (check_skill.py, docs) tied to the old owner?
+  c. README.md / README.ar.md: every claim against the code (features, numbers 76/49/27/35, install command, what was not checked). LICENSE: are the MIT terms kept for the original holder?
+  d. docs/arabic-review/README.md: do its table and instructions match the files beside it?
+
+OUTPUT: print the report to stdout (do not write a file). For each finding: severity, file and line, who_it_hurts, input -> wrong output, fix. Findings only. End with one line: VERDICT: CHANGES_REQUIRED or VERDICT: NO_BLOCKING_FINDINGS.

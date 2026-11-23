@@ -8,7 +8,7 @@ The kit's `cast.js` holds three kinds of puppet, all on `paper.js`, each with a 
 2. **Storybook figures seen mostly in profile**, a side set and a front set of pieces per figure (*Little Red Riding Hood*: Red, Mother, Grandma, the woodcutter, the wolf): `figurePuppet`, a child in a coat and a hat whose colours make other characters, on the shared `puppet()` and `common()`. Beyond the common keys it can look (`look`, the pupils), worry or frown (`brow`), blink (`shut`), bend at the waist (`lean`), duck or bend to pick something up with the feet kept on the ground (`crouch`, the far arm `fua`/`ffa`), sit on a seat of a given height or on the ground (`sit`), take its hat off (`hat`; the hair is drawn under the hat, so the head is never bald; `heldHat` is the hat centred for a hand) and hold a thing upright in its hand (`hold`).
 3. **Four-legged animals** in profile (*The Little Horse Crosses the River*: the horses, the water buffalo): `beast()`, a two-bone leg rig whose walk and trot come from the distance covered, with `catPuppet` as the example; another animal is another drawing and its `geo` (the pins and leg lengths), as Little Horse's `lib/cast.js` shows for a foal, a mare and a buffalo.
 
-Pick with the user. The two reference books' own `cast.js` files show the second and third kinds carried through a whole episode (`site/little-red-riding-hood/` and `site/little-horse/` in the Papermorph repository). A cast drawn by an image model is a fourth way ([Puppets from an image model](#puppets-from-an-image-model)).
+Pick with the user. The two reference books' own `cast.js` files show the second and third kinds carried through a whole episode (`site/little-red-riding-hood/` and `site/little-horse/` of this repository). A cast drawn by an image model is a fourth way ([Puppets from an image model](#puppets-from-an-image-model)).
 
 ## Contents
 
@@ -44,7 +44,7 @@ Pick with the user. The two reference books' own `cast.js` files show the second
 
 ## Puppets from an image model
 
-A cast an image model draws (a show's exact construction, a mascot) becomes bitmap puppets with live faces and arms, as *CWTFIGO*'s promo did (`site/cwtfigo-promo/lib/cwt.js` in the Papermorph repository is the worked builder). Ask for what the puppet cannot make itself and leave out what it must move:
+A cast an image model draws (a show's exact construction, a mascot) becomes bitmap puppets with live faces and arms, as *CWTFIGO*'s promo did (`site/cwtfigo-promo/lib/cwt.js` of this repository is the worked builder). Ask for what the puppet cannot make itself and leave out what it must move:
 
 - **Bodies without arms and faces without features**, the eye whites at most, on one flat colour no part of the figure uses (magenta for most casts). The arms, mitten hands, pupils, lids, brows and mouths are then drawn live in SVG in the picture's flat colours and ink, so the face blinks, looks and talks and the arms reach anywhere without another picture. A head that must bob or tilt on its own is asked for apart from the body, on the same sheet: splitting one figure later costs more.
 - **Props on one sheet**, each with room around it, so they come apart cleanly.

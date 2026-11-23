@@ -20,7 +20,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 SKILL = ROOT / '.claude/skills/wizbook'
 DOCS = [SKILL / 'SKILL.md', *sorted((SKILL / 'references').rglob('*.md'))]
-REPO_DOCS = [p for p in (ROOT / 'README.md', ROOT / 'AGENTS.md', ROOT / 'engine/vendor/mathjax/README.md') if p.exists()]
+REPO_DOCS = [p for p in (ROOT / 'README.md', ROOT / 'README.ar.md', ROOT / 'AGENTS.md', ROOT / 'docs/arabic-review/README.md',
+                                     ROOT / 'engine/vendor/mathjax/README.md') if p.exists()]
 problems = []
 
 
