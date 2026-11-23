@@ -4,7 +4,11 @@
 
 [بالعربي ←](README.ar.md)
 
-WizBook is built on **[Papermorph](https://github.com/DozenTwelve/Papermorph)** by TedKaczynski, under its MIT licence. Papermorph made the engine, the kits and the reference books; WizBook adds **Arabic and right-to-left books across every kit**, checked over six review rounds. The books on Papermorph's [live bookshelf](https://papermorph.diamonddoge.org/) show what the engine can do.
+![An Arabic lesson made with WizBook: Arabic lines that open with a Latin word, an English sentence, a price and an equation, each in its own reading order](docs/images/arabic-lesson.jpg)
+
+*A short Arabic lesson on Python variables, made with the Skill alone: narrated by Edge's Egyptian voice, with a quick check answered in Arabic-Indic digits.*
+
+WizBook is built on **[Papermorph](https://github.com/DozenTwelve/Papermorph)** by TedKaczynski, under its MIT licence. Papermorph made the engine, the kits and the reference books; WizBook adds **Arabic and right-to-left books across every kit**, checked over seven review rounds. The books on Papermorph's [live bookshelf](https://papermorph.diamonddoge.org/) show what the engine can do.
 
 ## What WizBook adds
 
@@ -13,19 +17,20 @@ An Arabic book is a whole book, not an English one with the letters swapped:
 - **Text in the right order, everywhere.** Each line on the stage, in a caption, a map label, a scroll card or a subtitle reads in the direction of its own words. An Arabic line that opens with a Latin name (`Newton قال ذلك`) still starts at the right; an English sentence quoting one Arabic word stays left to right; `x = ٣` and `F = ma` are left alone. Where no rule can tell (`Sir Isaac Newton عالم إنجليزي`), the author decides with a direction mark at the start of the line.
 - **Answers typed on an Arabic keyboard are graded right.** `٣`, `٠٫٧٥`, `١٬٠٠٠`, the comma key's `١،٠٠٠` and `١،٥`, `$١،٠٠٠` and `١،٠٠٠٫٥` are the numbers they look like, and every answer an English, Russian, Chinese or Japanese book accepted before is judged the same.
 - **Arabic narration you can trust.** Edge's Arabic voices were measured: the Egyptian voice says *nothing* for a number written `١٬٠٠٠` or `١٫٥`, while the caption still shows it. `tts.py` names each such number and how to write it, and its check for a clip that stops before its text ends reads Arabic words without their vowel marks and numbers as Edge reports them.
+- **Maths inside an Arabic sentence keeps its order.** `لو 5 + x = 7` no longer shows as `x = 7 + 5`, and the options `x = 10` and `10 = x` no longer look alike, on the stage, in cards and in captions; a range of years, a date or a sum in Arabic-Indic digits still reads with its sentence.
 - **The interface in Arabic**, with Arabic plurals, keyboard shortcuts that work on an Arabic layout, letter spacing and italics dropped where Arabic letters join, and `.srt` subtitles marked so any player shows them in order.
 - **One flag to start.** `python3 .claude/skills/wizbook/scripts/new_book.py lesson my-book --lang ar` writes `dir="rtl"`, an Arabic Edge voice and the language into a new book (Hebrew, Persian and Urdu pages open right to left too).
 
 ## How it was checked
 
-The Arabic work went through **six rounds of adversarial review** on a frozen commit, by models from other families than the author's: Google's Gemini and Tencent's Hunyuan in most rounds, with Anthropic's Claude Fable in the first and DeepSeek in the second. The sixth had one report, Tencent's, after Gemini ran out of time twice.
+The Arabic work went through **seven rounds of adversarial review**, each on a frozen commit, by models from other families than the author's: Google's Gemini and Tencent's Hunyuan in most rounds, with Anthropic's Claude Fable in the first and DeepSeek in the second. The sixth had one report, Tencent's, after Gemini ran out of time twice. The last round came from making an Arabic lesson with the Skill and watching it frame by frame: that is how the reversed equations were found, and where the reviewers disagreed, each case was drawn in an Arabic page before and after the fix ([the sheet](docs/arabic-review/round8/before-after.png)).
 
 | | |
 | --- | --- |
-| Findings read by hand and ruled on | **76** |
-| Accepted and fixed | **49** |
-| Rejected, each with its reason written down | **27** |
-| Deliberate breakages ("mutations") each new test had to catch | **35 of 35 caught** |
+| Findings read by hand and ruled on | **96** |
+| Accepted and fixed | **64** |
+| Rejected, each with its reason written down | **32** |
+| Deliberate breakages ("mutations") each new test had to catch | **58 of 58 caught** |
 
 Every round's rulings, the brief the reviewers were given and the scripts that break the code on purpose are in [docs/arabic-review/](docs/arabic-review/) (in Arabic). Where a finding turned on what a voice actually does, it was measured against Edge rather than argued, and the measuring scripts are there too.
 
