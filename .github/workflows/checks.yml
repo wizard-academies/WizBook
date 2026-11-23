@@ -19,7 +19,7 @@ jobs:
       - name: Narration captions and marks (no voice needed)
         run: python3 .github/scripts/check_tts_text.py
       - name: Python scripts (pyflakes errors, no unused-import noise)
-        run: pipx run ruff check --select F,E9 --ignore F401 --output-format concise .claude/skills/papermorph/scripts .github engine
+        run: pipx run ruff check --select F,E9 --ignore F401 --output-format concise .claude/skills/wizbook/scripts .github engine
 
   sound:
     runs-on: ubuntu-latest
@@ -30,7 +30,7 @@ jobs:
       - name: ffmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - name: Sound tools' self-tests (levelling, music cut, effect recipes)
-        working-directory: .claude/skills/papermorph/scripts
+        working-directory: .claude/skills/wizbook/scripts
         run: |
           python3 level.py --selftest
           uv run --with numpy python music.py --selftest

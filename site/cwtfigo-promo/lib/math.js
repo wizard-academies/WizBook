@@ -1,4 +1,4 @@
-// Papermorph maths helpers: number lines, tiles, fractions, planes, dice, the number map, sorter.
+// WizBook maths helpers (from Papermorph): number lines, tiles, fractions, planes, dice, the number map, sorter.
 // A maths chapter loads this right after engine.js; it uses the engine's globals as it loads.
 'use strict';
 // Vertical number line at x; Yf maps a value to its y. Labels sit on the left.

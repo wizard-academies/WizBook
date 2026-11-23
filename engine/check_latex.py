@@ -20,7 +20,7 @@ from playwright.async_api import async_playwright
 
 ENGINE_DIR = Path(__file__).resolve().parent
 ROOT = ENGINE_DIR.parent
-SKILL = ROOT / ".claude/skills/papermorph"
+SKILL = ROOT / ".claude/skills/wizbook"
 SITE = ROOT / "site"
 ORIGIN = "http://papermorph.test"
 BASE_REF = os.environ.get("BASE_REF", "main")

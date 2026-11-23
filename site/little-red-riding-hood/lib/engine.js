@@ -1,4 +1,4 @@
-// Papermorph lesson engine: stage, drawing, timeline, questions, player.
+// WizBook lesson engine (from Papermorph): stage, drawing, timeline, questions, player.
 // A chapter page loads this file, defines CHAPTER and BEATS, then calls boot().
 'use strict';
 // A fast follow-up navigation can abort the incoming page transition.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check that the Papermorph Skill's docs agree with its files. Standard library only; run from the repository root:
+"""Check that the WizBook Skill's docs agree with its files. Standard library only; run from the repository root:
 
     python3 .github/scripts/check_skill.py
 
@@ -18,7 +18,7 @@ import re, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-SKILL = ROOT / '.claude/skills/papermorph'
+SKILL = ROOT / '.claude/skills/wizbook'
 DOCS = [SKILL / 'SKILL.md', *sorted((SKILL / 'references').rglob('*.md'))]
 REPO_DOCS = [p for p in (ROOT / 'README.md', ROOT / 'AGENTS.md', ROOT / 'engine/vendor/mathjax/README.md') if p.exists()]
 problems = []

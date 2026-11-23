@@ -19,7 +19,7 @@ from playwright.async_api import async_playwright
 
 ENGINE_DIR = Path(__file__).resolve().parent
 ROOT = ENGINE_DIR.parent
-SKILL = ROOT / ".claude/skills/papermorph"
+SKILL = ROOT / ".claude/skills/wizbook"
 SITE = ROOT / "site"
 BASE = os.environ.get("BASE_URL", "http://127.0.0.1:8767").rstrip("/")
 BASE_REF = os.environ.get("BASE_REF", "main")

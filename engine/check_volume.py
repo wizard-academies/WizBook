@@ -13,7 +13,7 @@ from urllib.parse import urlparse
 from playwright.async_api import async_playwright
 
 ENGINE = Path(__file__).resolve().parent
-SKILL = ENGINE.parent / ".claude/skills/papermorph"
+SKILL = ENGINE.parent / ".claude/skills/wizbook"
 SITE = ENGINE.parent / "site"
 BASE = os.environ.get("BASE_URL", "http://127.0.0.1:8767").rstrip("/")
 

@@ -14,7 +14,7 @@ import re, subprocess, sys, tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-SCRIPTS = ROOT / '.claude/skills/papermorph/scripts'
+SCRIPTS = ROOT / '.claude/skills/wizbook/scripts'
 failed = []
 
 
@@ -39,7 +39,7 @@ def main():
     for book in books:
         run(f'lint {book.name}', [sys.executable, str(SCRIPTS / 'lint.py'), str(book.relative_to(ROOT))])
 
-    tracked = subprocess.run(['git', 'ls-files', 'engine', 'site', '.claude/skills/papermorph/assets'],
+    tracked = subprocess.run(['git', 'ls-files', 'engine', 'site', '.claude/skills/wizbook/assets'],
                              cwd=ROOT, capture_output=True, text=True, check=True).stdout.split()
     js = [f for f in tracked if f.endswith('.js') and 'vendor/' not in f and not f.endswith('mathjax.js')]
     pages = [f for f in tracked if f.endswith('.html')]

@@ -1,11 +1,11 @@
-# Working on Papermorph
+# Working on WizBook
 
-Papermorph is a Claude Code Skill that turns a textbook PDF, a story or an argument into a narrated, animated web book: lessons, picture books, and films (documentaries and upright shorts). This file is for an agent changing the repository; the Skill's own instructions for making books are in `.claude/skills/papermorph/SKILL.md`.
+WizBook is a Claude Code Skill that turns a textbook PDF, a story or an argument into a narrated, animated web book: lessons, picture books, and films (documentaries and upright shorts). It is built on [Papermorph](https://github.com/DozenTwelve/Papermorph) and adds Arabic and right-to-left books. This file is for an agent changing the repository; the Skill's own instructions for making books are in `.claude/skills/wizbook/SKILL.md`.
 
 ## What lives where
 
-- `.claude/skills/papermorph/`: the Skill. `SKILL.md` routes by tier and links every reference directly; `references/core/` holds what every tier shares (style, publish, sound, review, team, engine), `references/lessons/`, `references/picture-books/` and `references/films/` what is each tier's own; `scripts/` the tools; `assets/templates/` the kits a new book is copied from (`scripts/new_book.py`).
-- `engine/`: the one source of the player and drawing engine. Change it here, then copy it into the books with `python3 .claude/skills/papermorph/scripts/engine.py site`; never edit a book's `lib/engine.*` copy. A book's own settings live in its `lib/book.css`, which the sync leaves alone.
+- `.claude/skills/wizbook/`: the Skill. `SKILL.md` routes by tier and links every reference directly; `references/core/` holds what every tier shares (style, publish, sound, review, team, engine), `references/lessons/`, `references/picture-books/` and `references/films/` what is each tier's own; `scripts/` the tools; `assets/templates/` the kits a new book is copied from (`scripts/new_book.py`).
+- `engine/`: the one source of the player and drawing engine. Change it here, then copy it into the books with `python3 .claude/skills/wizbook/scripts/engine.py site`; never edit a book's `lib/engine.*` copy. A book's own settings live in its `lib/book.css`, which the sync leaves alone.
 - `site/`: the published books, static files only, with no build step or backend.
 - `books/`, `content/` and `tools/` are the maintainers' private working folders and are not in the repository. Don't recreate them in a commit.
 - Don't add a copyrighted book, its PDF, or lessons made from one.
@@ -28,7 +28,7 @@ CI (`.github/workflows/checks.yml`) runs these on every pull request; run them b
 
 - `python3 .github/scripts/check_skill.py` checks links and anchors, that `SKILL.md` links every reference and names every script, that scripts compile, that flags and paths named in the docs exist, and that every `engine-vX.Y` the Skill names is `engine.py`'s DEFAULT.
 - `python3 .github/scripts/check_site.py` (needs Node) checks that every book's engine copy matches `engine/`, runs `lint.py` on every book, and runs `node --check` on every script, inline page scripts included.
-- `level.py --selftest`, `music.py --selftest` and `sfx.py --selftest` (in `.claude/skills/papermorph/scripts`; ffmpeg, and `uv run --with numpy` for the last two) check the sound tools on synthetic clips.
-- `pipx run ruff check --select F,E9 --ignore F401 .claude/skills/papermorph/scripts .github engine` catches undefined names and other pyflakes errors in the Python tools.
-- After an engine or page change, serve the site (`python3 .claude/skills/papermorph/scripts/serve.py 8765 site`), play the chapters you touched in a browser, and run `python3 .claude/skills/papermorph/scripts/lint.py site/<book>` and the engine's own checks (`uv run --with playwright engine/check_i18n.py`, `engine/check_latex.py`, `engine/check_find.py`; `engine/check_volume.py` with the site served on 8767).
+- `level.py --selftest`, `music.py --selftest` and `sfx.py --selftest` (in `.claude/skills/wizbook/scripts`; ffmpeg, and `uv run --with numpy` for the last two) check the sound tools on synthetic clips.
+- `pipx run ruff check --select F,E9 --ignore F401 .claude/skills/wizbook/scripts .github engine` catches undefined names and other pyflakes errors in the Python tools.
+- After an engine or page change, serve the site (`python3 .claude/skills/wizbook/scripts/serve.py 8765 site`), play the chapters you touched in a browser, and run `python3 .claude/skills/wizbook/scripts/lint.py site/<book>` and the engine's own checks (`uv run --with playwright engine/check_i18n.py`, `engine/check_latex.py`, `engine/check_find.py`; `engine/check_volume.py` with the site served on 8767).
 - After a large change to the Skill, have a fresh agent make a short film with the Skill alone, and sort what it trips on under the rules above. If a problem fits none of them, a rule is missing.

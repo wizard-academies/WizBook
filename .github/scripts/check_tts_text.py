@@ -12,7 +12,7 @@ import unicodedata
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-spec = importlib.util.spec_from_file_location("tts", ROOT / ".claude/skills/papermorph/scripts/tts.py")
+spec = importlib.util.spec_from_file_location("tts", ROOT / ".claude/skills/wizbook/scripts/tts.py")
 tts = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(tts)
 
@@ -89,7 +89,7 @@ for text, spoken, want in [
 
 # export.py's .srt lines (its two text helpers alone: the module itself needs a browser). A right-to-left mark opens an
 # Arabic line; in an Arabic film also one that a Latin name opens; an English line is never touched.
-source = (ROOT / ".claude/skills/papermorph/scripts/export.py").read_text(encoding="utf-8")
+source = (ROOT / ".claude/skills/wizbook/scripts/export.py").read_text(encoding="utf-8")
 helpers = [n for n in ast.parse(source).body if isinstance(n, ast.FunctionDef) and n.name in ("rtl_letter", "rtl_marked")]
 srt = {"unicodedata": unicodedata}
 exec(compile(ast.Module(body=helpers, type_ignores=[]), "export.py", "exec"), srt)
