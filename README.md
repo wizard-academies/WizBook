@@ -8,7 +8,7 @@
 
 *A short Arabic lesson on Python variables, made with the Skill alone: narrated by Edge's Egyptian voice, with a quick check answered in Arabic-Indic digits.*
 
-WizBook is built on **[Papermorph](https://github.com/DozenTwelve/Papermorph)** by TedKaczynski, under its MIT licence. Papermorph made the engine, the kits and the reference books; WizBook adds **Arabic and right-to-left books across every kit**, checked over seven review rounds. The books on Papermorph's [live bookshelf](https://papermorph.diamonddoge.org/) show what the engine can do.
+WizBook is built on **[Papermorph](https://github.com/DozenTwelve/Papermorph)** by TedKaczynski, under its MIT licence. Papermorph made the engine, the kits and the reference books; WizBook adds **Arabic and right-to-left books across every kit**, checked over eight review rounds. The books on Papermorph's [live bookshelf](https://papermorph.diamonddoge.org/) show what the engine can do.
 
 ## What WizBook adds
 
@@ -23,14 +23,14 @@ An Arabic book is a whole book, not an English one with the letters swapped:
 
 ## How it was checked
 
-The Arabic work went through **seven rounds of adversarial review**, each on a frozen commit, by models from other families than the author's: Google's Gemini and Tencent's Hunyuan in most rounds, with Anthropic's Claude Fable in the first and DeepSeek in the second. The sixth had one report, Tencent's, after Gemini ran out of time twice. The last round came from making an Arabic lesson with the Skill and watching it frame by frame: that is how the reversed equations were found, and where the reviewers disagreed, each case was drawn in an Arabic page before and after the fix ([the sheet](docs/arabic-review/round8/before-after.png)).
+The Arabic work went through **eight rounds of adversarial review**, each on a frozen commit, by models from other families than the author's: Google's Gemini and Tencent's Hunyuan in most rounds, with Anthropic's Claude Fable in the first and DeepSeek in the second. The sixth had one report, Tencent's, after Gemini ran out of time twice. The last round came from making an Arabic lesson with the Skill and watching it frame by frame: that is how the reversed equations were found, and where the reviewers disagreed, each case was drawn in an Arabic page before and after the fix ([the sheet](docs/arabic-review/round8/before-after.png)).
 
 | | |
 | --- | --- |
-| Findings read by hand and ruled on | **96** |
-| Accepted and fixed | **64** |
-| Rejected, each with its reason written down | **32** |
-| Deliberate breakages ("mutations") each new test had to catch | **58 of 58 caught** |
+| Findings read by hand and ruled on | **114** |
+| Accepted and fixed | **71** |
+| Rejected, each with its reason written down | **43** |
+| Deliberate breakages ("mutations") each new test had to catch | **61 of 61 caught** |
 
 Every round's rulings, the brief the reviewers were given and the scripts that break the code on purpose are in [docs/arabic-review/](docs/arabic-review/) (in Arabic). Where a finding turned on what a voice actually does, it was measured against Edge rather than argued, and the measuring scripts are there too.
 

@@ -27,13 +27,12 @@ MUTANTS = [   # name, file, anchor, replacement, the words the check's failure m
     ("an Arabic word across a sign holds", E, r"LTR_WORD.test(m[1].slice(-1)) || /^\p{Script=Arabic}\p{M}*$/u.test(m[1]);",
      r"LTR_WORD.test(m[1].slice(-1)) || /\p{Script=Arabic}/u.test(m[1]);", 'الناتج = 7 + 2'),
     ("a list item's sign holds", E, "return m[1] === '' ? m.index !== 0 :", "return m[1] === '' ? true :", '- x = 5'),
-    ("'and' joined to a number holds", E, r" && !/(?:^|\s)و$/.test(before))", ")", 'و5 + 2 = 7'),
-    ("an expression joined to a word (an Arabic word, a web address) is isolated", E, r'''(p && p !== RLM && p !== LRM && !/[\s(\[«"'“‘،:؛]/.test(p) && !/(?:^|\s)و$/.test(before))''', "false",
+    ("'and' joined to a number holds", E, r" && !/(?:^|\s)[وفبلك]$/.test(before))", ")", 'و5 + 2 = 7'),   # round 9: ف ب ل ك join too
+    ("an expression joined to a word (an Arabic word, a web address) is isolated", E, r'''(p && p !== RLM && p !== LRM && !/[\s(\[«"'“‘،:؛]/.test(p) && !/(?:^|\s)[وفبلك]$/.test(before))''', "false",
      'قيمةx = 5'),
     ("a time is taken for a sum", E, "|| (/[،:؛]/.test(p) && LTR_WORD.test(before.slice(-2, -1)))", "", 'الوقت 10:5 + 3'),
     ("a number's unit is left out", E, r"(?:${number}(?:[^\S\n]?${name})?[%٪°]?", r"(?:${number}(?:${name})?[%٪°]?", 'المسافة 5 km'),
-    ("a line its author marked right to left is isolated", E,
-     "  if (s[0] === RLM && !RTL_LETTER.test(s)) return s;", "", "ltrMaths('" + BS + "u200f5 + 2 = 7')"),
+    # retired in round 9: a line its author marked right to left is isolated like any other (round9/ADJUDICATION.md)
     ("a bracket is parted from its partner", E, r"for (let k = opens - closes; k > 0 && /[(\[]/.test(e[a]); k--) a++;", "", 'x = 5 مثلا'),
     ("stream: an isolate's close is a step of its own", E, "else if (c === PDI && g.length && !lead) g[g.length - 1] += c;", "", 'stream: a step shows nothing new'),
     ("stream: an isolate's opening is a step of its own", E, "if (c === RLM || c === LRM || c === LRI) lead += c;", "if (c === RLM || c === LRM) lead += c;",

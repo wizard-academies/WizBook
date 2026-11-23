@@ -1,0 +1,18 @@
+You are reviewing a pull request about to be sent to an open-source project (Papermorph: a Claude Code Skill that turns textbooks and stories into narrated, animated web books). The branch adds Arabic and right-to-left support across the kits and the engine. It is read-only for you: do not edit files.
+
+The last commit of the branch (the part not reviewed in this repository before: the maths fix carried over, and a stricter English check), minus the engine copies under site/*/lib, is in the file .prreview/port.diff (about 330 lines) in this workspace. Read that file with your file-reading tool; do NOT run any shell command (git diff, grep, ls): headless mode refuses them and you will produce nothing. The repository's rules for contributors are in AGENTS.md.
+
+The code has already been through eight review rounds and others found ninety-six findings in it. A review that agrees with the author is a failed review. Treat it as guilty.
+
+This round has one extra question the earlier rounds did not have: the work was developed in a renamed copy of the project and carried back here. Look for:
+1. Anything that only makes sense in that renamed copy: a different product name, a different Skill folder name (.claude/skills/<name>), links to another repository, wording that assumes a fork. The Skill folder here is .claude/skills/papermorph.
+2. Anything that changes what an ENGLISH (left-to-right) book shows or does. English books must be byte-for-byte unchanged in behaviour; name the line and the English input that would change.
+3. A doc sentence in references/ that the code does not do, or code the docs do not mention (AGENTS.md rule 1).
+4. A test in engine/check_i18n.py that cannot fail, or that passes while the thing it names is broken.
+5. Anything a maintainer would reject on sight: files that do not belong (books, audio, generated lessons), an engine version bump that clashes, unrelated churn.
+
+Rank each finding by who gets hurt and what they see (a reader of an Arabic book, a reader of an English book, an author using the Skill, the maintainer). Something technically wrong that nobody can reach is P2: write it down in one line.
+
+Produce the REPORT. Do not spend your budget exploring. Print the report to stdout as your final message, in this form for each finding:
+- [P0|P1|P2] file:line - what is wrong - who hits it and what they see - the fix.
+End with a one-line verdict: would you merge this as the maintainer, and what is the one thing you would ask to change first.
