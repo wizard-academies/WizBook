@@ -2,7 +2,7 @@ ADVERSARIAL REVIEW - round 8. Produce the REPORT. Do not spend your budget explo
 
 WizBook is a Claude Code Skill that makes narrated, animated web books; its player is engine/engine.js. Arabic books are right to left (<html dir="rtl">): the stage (SVG, direction ltr, each <text> unicode-bidi: plaintext) and maths helpers stay left to right, cards and captions are HTML that reads from the right. This code has passed seven review rounds and each one found harm the round before had introduced. Treat it as guilty. A review that agrees with the author is a failed review.
 
-THE CHANGE (commit 89ccae9): READ review/round8/fix.diff in the workspace (the books' engine copies under site/ are left out). You may open any file. Do NOT run git or any shell command - you cannot approve commands and you will die with nothing.
+THE CHANGE (commit efadba1): READ review/round8/fix.diff in the workspace (the books' engine copies under site/ are left out). You may open any file. Do NOT run git or any shell command - you cannot approve commands and you will die with nothing.
 
 What it claims: an expression typed inside a right-to-left line used to be reordered by the browser ('لو 5 + x = 7' showed as 'x = 7 + 5'; the card options 'x = 10' and '10 = x' looked the same). ltrMaths(str) now wraps each expression in a left-to-right isolate (U+2066 ... U+2069). rtlText() applies it to right-to-left lines on the stage (T, stream, and the kits that call rtlText: .claude/skills/wizbook/assets/templates/documentary/lib/film.js say(), picture-book/lib/paper.js endCard), rich() applies it to every string of a card in a right-to-left page, and the caption does too. stream() folds the invisible marks into a neighbouring letter. English pages must be byte-identical in behaviour.
 

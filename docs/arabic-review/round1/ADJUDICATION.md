@@ -1,6 +1,6 @@
 # الراوند الأولى — القبول والرفض
 
-- **الهدف المجمّد:** كوميت `1df88d3` (فرع `feat/arabic-rtl-stage`، الأساس `839a62c`). الديف في `change.diff`، والبريف في `brief.txt`.
+- **الهدف المجمّد:** كوميت `6559740` (فرع `feat/arabic-rtl-stage`، الأساس `839a62c`). الديف في `change.diff`، والبريف في `brief.txt`.
 - **اللينات اللي رجّعت تقرير:** `fable-medium` (Claude Fable 5.1، 14 فايندنج) و`gemini-high` (Gemini 3.8 Flash، 22 فايندنج). التقارير الكاملة: `lane-fable-medium.out` و`lane-gemini-high.out`.
 - **اللينات اللي ما اشتغلتش، وسبب كل واحدة (من الخطأ نفسه، مش تخمين):**
   - `astra-high` و`sol-schema`: Codex رد «The model is not supported when using Codex with a ChatGPT account».
