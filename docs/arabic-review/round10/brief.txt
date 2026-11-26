@@ -1,0 +1,14 @@
+You are reviewing a one-line regular-expression change in a JavaScript engine. A review that agrees with the author is a failed review: treat the change as guilty until you have shown otherwise.
+
+Read ONLY these files (do not run shell commands, do not run git; just read):
+- docs/arabic-review/round10/port.diff  (the change, 29 lines)
+- engine/engine.js, the functions heldBefore(), heldAfter() and ltrMaths() (around lines 420-480)
+
+The change: SIGN_BEFORE was /(\S*)\s*SIGNS$/u and is now /(?:^|\s)(\S*)\s*SIGNS$/u. It is used only in heldBefore(), which reads m[1] and, when m[1] is '', m.index. The claim is that the new pattern returns the same m[1] for every input, and the same answer from heldBefore(), while avoiding a quadratic rescan of a long word (a 30,000-letter Arabic word took seconds). A timing assertion was added to check_i18n.py.
+
+Questions:
+1. Is there ANY string t (after trimEnd) for which heldBefore(t) returns a different boolean with the new pattern? Think about m.index now pointing at the whitespace character instead of the word start, about \s matching newlines and non-ASCII spaces (U+00A0, U+2066/U+2069 are NOT \s), about a word that begins right after an isolate mark or RLM, and about a sign run with signs inside the "word".
+2. Can the new pattern still be slow on some input (another quadratic case)?
+3. Can the timing test fail on a slow but correct machine, or pass while the bug is back?
+
+Produce the REPORT. Do not spend your budget exploring. Print the report to stdout. For each finding give: the exact input string, old result, new result, and who is hurt (a reader of an Arabic book, or nobody). If you find nothing, say which inputs you checked.
